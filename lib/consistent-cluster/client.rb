@@ -3,8 +3,6 @@ require "consistent-cluster/version"
 
 require "consistent-cluster/consistent_hashing"
 
-require "json"
-
 module ConsistentCluster
 
   class Client
