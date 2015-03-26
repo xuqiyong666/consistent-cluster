@@ -1,7 +1,7 @@
 
 #consistent-cluster
 
-用于整合自定义服务集群接口，方便客户端调用
+用于整合服务集群接口，方便客户端调用
 
 调用方式包含一致性哈希逻辑,轮询逻辑
 
@@ -26,9 +26,7 @@ all_config = {
 
   zookeeper_service: "127.0.0.1:2181",  #必填 zookeeper的ip+端口信息
 
-  zookeeper_path: "/test"               #必填 zookeeper指定目录
-
-  consistent_hashing_replicas: 100,     #选填 一致性哈希环中，每个服务的虚拟节点数量，默认值: 3
+  zookeeper_path: "/test",              #必填 zookeeper指定目录
 
   create_proc: Proc.new { |node_content|     
     app_info = JSON.parse(node_content) #比如zookeeper节点中存放的是json字符串
@@ -45,6 +43,8 @@ all_config = {
   after_sync_proc: Proc.new { |info|
     puts info.inspect
   }, #选填 同步zookeeper信息之后，会调用这个proc，info为同步到的zookeeper信息，可以打印出info方便debug。一般不需要配置。
+
+  consistent_hashing_replicas: 100     #选填 一致性哈希环中，每个服务的虚拟节点数量，默认值: 3
 }
 
 #zookeeper指定目录结构说明: 目录中的每一个节点代表一个独立的服务器,节点名称作为服务器名称,节点的内容作为服务器的配置信息
@@ -74,15 +74,18 @@ require "consistent-cluster/client"
 
 #定义服务器集群hash
 cluster = {}
-["127.0.0.1:9091","127.0.0.1:9092","127.0.0.1:9093"].each do |value|
-  cluster[value] = ThriftClient.new("servers" => value,
+["127.0.0.1:9091","127.0.0.1:9092","127.0.0.1:9093"].each do |iport|
+  app_name = iport
+  cluster[app_name] = ThriftClient.new("servers" => iport,
                   "multiplexed" => false,
                   "protocol" => 'binary',
                   "transport" => 'socket')
 end
 
 all_config = {
+
   consistent_hashing_replicas: 100, #选填 一致性哈希环中，每个服务的虚拟节点数量，默认值: 3
+  
   cluster: cluster                  #必填 服务器集群hash
 }
 
