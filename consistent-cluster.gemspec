@@ -9,11 +9,11 @@ Gem::Specification.new do |s|
   s.authors     = ["jeffrey6052"]
   s.email       = ["jeffrey6052@163.com"]
   s.homepage    = "https://github.com/Jeffrey6052/consistent-cluster"
-  s.summary     = ""
+  s.summary     = "一致性哈希集群"
   s.description = "用于整合服务集群接口，方便客户端调用; 调用方式包含一致性哈希逻辑,轮询逻辑; 支持绑定zookeeper,同步集群配置"
 
   s.files         = gem_files
 
-  s.add_runtime_dependency "atomic", "~> 1.1.99"
+  s.add_runtime_dependency "atomic", "~> 1.1"
 
 end

@@ -15,7 +15,7 @@ $ gem install consistent-cluster
 
 ## 使用说明
 
-###一、 使用zookeeper自动同步集群配置
+###一、 zookeeper自动同步集群
 
 ``` ruby
 # -*- coding: utf-8 -*-
@@ -31,12 +31,16 @@ all_config = {
   zookeeper_path: "/test",
 
   #必填 单个服务对象的创建Proc，node_content为zookeeper节点中存放的值
-  create_proc: Proc.new { |node_content|     
-    app_info = JSON.parse(node_content) #比如zookeeper节点中存放的是json字符串
+  create_proc: Proc.new { |node_content|
+
+    #比如zookeeper节点中存放的是json字符串 
+    app_info = JSON.parse(node_content) 
+
+    #比如thrift客户端
     ThriftClient.new("servers" => "#{app_info["host"]}:#{app_info["port"]}",
                     "multiplexed" => app_info["serviceNames"].length > 1,
                     "protocol" => 'binary',
-                    "transport" => 'socket') 比如生成thrift客户端
+                    "transport" => 'socket')
   },
 
   #选填 可以补充一些删除服务器时的操作,比如客户端需要手动断开连接操作，client为上面create_proc的返回值

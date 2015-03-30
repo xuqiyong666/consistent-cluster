@@ -16,14 +16,19 @@ def set(hash)
   $zk.set("#{$path}/#{app_name}",hash.to_json)
 end
 
-def delete(app)
-  $zk.delete("#{$path}/#{app}")
+def delete(hash)
+  app_name = hash[:id]
+  delete_with_app_name(app_name)
+end
+
+def delete_with_app_name(app_name)
+  $zk.delete("#{$path}/#{app_name}")
 end
 
 def clear
   apps = $zk.children($path)
-  apps.each do |app|
-    delete(app)
+  apps.each do |app_name|
+    delete_with_app_name(app_name)
   end
 end
 
@@ -42,7 +47,7 @@ app2 = {
   host: "127.0.0.1",
   port: "9092",
   id: "127.0.0.1:9092",
-  protocolType: "thrift",
+  protocolType: "thriftx",
   serviceNames: ["com.ximalaya.service.uts.api.thrift.IUserTrackRecordServiceHandler$Iface"]
 }
 
@@ -51,7 +56,7 @@ app3 = {
   host: "127.0.0.1",
   port: "9093",
   id: "127.0.0.1:9093",
-  protocolType: "thrift",
+  protocolType: "thriftxx",
   serviceNames: ["com.ximalaya.service.uts.api.thrift.IUserTrackRecordServiceHandler$Iface"]
 }
 
@@ -63,7 +68,36 @@ create(app2)
 
 create(app3)
 
-#set(app2)
+set(app2)
+
+delete(app2)
+
+create(app2)
+
+set(app2)
+
+delete(app2)
+
+create(app2)
+
+delete(app2)
+
+create(app2)
+
+set(app2)
+
+delete(app2)
+
+create(app2)
+
+set(app2)
+
+set(app1)
+
+set(app2)
+
+set(app3)
+
 
 
 

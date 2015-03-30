@@ -3,8 +3,6 @@ require "consistent-cluster/version"
 
 require "consistent-cluster/consistent_hashing"
 
-gem "zk", "~> 1.9.5" #gem本身不默认依赖zk,此处补充依赖
-
 require "zk"
 
 module ConsistentCluster
@@ -17,6 +15,7 @@ module ConsistentCluster
 
       @data = {}
       @cluster = {}
+      @node_register = {}
 
       replicas = options[:consistent_hashing_replicas] || 3
       @ring = ConsistentHashing::Ring.new([],replicas)
@@ -63,7 +62,7 @@ module ConsistentCluster
       @syncing = true
       while @to_sync
         @to_sync = false
-        app_names = sync_children
+        app_names = get_app_names
         current_app_names = @cluster.keys
 
         to_update = current_app_names&app_names
@@ -89,24 +88,31 @@ module ConsistentCluster
       end
     end
 
-    def sync_children
+    def get_app_names
       @zk.children(@path, watch: true)
     end
 
     def create_service(app_name)
 
+      app_path = "#{@path}/#{app_name}"
+      @node_register[app_name] = @zk.register(app_path) do |event|
+        sync_services
+      end
+
       app_content = get_app_content(app_name)
 
       server = @create_proc.call(app_content)
 
-      @data[app_name] = app_content
+      if server
 
-      @cluster[app_name] = server
+        @cluster[app_name] = server
 
-      @ring.add(app_name)
+        @ring.add(app_name)
 
-      app_path = "#{@path}/#{app_name}"
-      @zk.get(app_path, watch: true)
+        @data[app_name] = app_content
+
+      end
+
     rescue Exception => boom
       puts "sync create :#{app_name} raise #{boom.class} - #{boom.message}"
     end
@@ -123,6 +129,11 @@ module ConsistentCluster
         end
       end
 
+      reg = @node_register[app_name]
+      if reg
+        reg.unregister
+      end
+
     rescue Exception => boom
       puts "sync destroy :#{app_name} raise #{boom.class} - #{boom.message}"
     end
@@ -133,6 +144,7 @@ module ConsistentCluster
       app_content = get_app_content(app_name)
 
       cache_info = @data[app_name]
+
       if cache_info != app_content
         destroy_service(app_name)
         create_service(app_name)
@@ -143,7 +155,7 @@ module ConsistentCluster
 
     def get_app_content(app_name)
       app_path = "#{@path}/#{app_name}"
-      content = @zk.get(app_path).first
+      content = @zk.get(app_path, watch: true).first
       content
     end
 
