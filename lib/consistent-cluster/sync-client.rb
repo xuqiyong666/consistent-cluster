@@ -37,7 +37,7 @@ module ConsistentCluster
 
     def shard(key=nil)
       cluster_sum = @cluster.length
-      raise "no service available" if cluster_sum < 1
+      raise "no service available at #{@path}" if cluster_sum < 1
       if key
         point = @ring.point_for(key)
         server = @cluster[point.node]
