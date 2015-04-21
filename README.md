@@ -20,6 +20,7 @@ $ gem install consistent-cluster
 ``` ruby
 # -*- coding: utf-8 -*-
 
+require "zk"
 require "consistent-cluster/sync-client"
 
 all_config = {
