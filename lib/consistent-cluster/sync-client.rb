@@ -10,8 +10,6 @@ module ConsistentCluster
   class SyncClient
 
     def initialize(options)
-      @zk = ZK.new(options[:zookeeper_service])
-      @path = options[:zookeeper_path]
 
       @data = {}
       @cluster = {}
@@ -25,6 +23,10 @@ module ConsistentCluster
       @after_sync_proc = options[:after_sync_proc] 
 
       @to_sync,@syncing = false,false
+      
+      @path = options[:zookeeper_path]
+
+      @zk = ZK.new(options[:zookeeper_service],reconnect: true)
 
       @zk.register(@path) do |event|
         sync_services
@@ -32,7 +34,21 @@ module ConsistentCluster
 
       sync_services
 
+      #on_state_change
+      #on_connecting
+      #on_expired_session
+      @zk.on_connected do
+        reconnect_callback
+      end
+
       @shard_num = 0
+    end
+
+    def reconnect_callback
+      case @zk.state
+      when :connected
+        sync_services
+      end
     end
 
     def shard(key=nil)
