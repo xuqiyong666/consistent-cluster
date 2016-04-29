@@ -52,14 +52,24 @@ module ConsistentCluster
         reconnect_callback
       end
 
+      check_timer = options[:check_timer]
+      check_timer ||= 60 #default 1 minutes gap
+
+      start_check_timer_thread(check_timer)
+
       @shard_num = 0
     end
 
-    def reconnect_callback
-      case @zk.state
-      when :connected
-        sync_services
-      end
+    def start_check_timer_thread(check_timer)
+      return if check_timer <= 0
+      Thread.new {
+        while true
+          sleep check_timer
+          if !@syncingMutex.locked? && local_version != remote_version
+            sync_services
+          end
+        end
+      }
     end
 
     def shard(key=nil)
@@ -104,6 +114,13 @@ module ConsistentCluster
     end
 
     protected
+
+    def reconnect_callback
+      case @zk.state
+      when :connected
+        sync_services
+      end
+    end
 
     def sync_services
       @syncingMutex.synchronize do
