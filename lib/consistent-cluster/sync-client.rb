@@ -65,8 +65,13 @@ module ConsistentCluster
       Thread.new {
         while true
           sleep check_timer
-          if !@syncingMutex.locked? && local_version != remote_version
-            sync_services
+          begin
+            if !@syncingMutex.locked? && local_version != remote_version
+              sync_services
+            end
+          rescue Exception => boom
+            #eat error here. loop should continue.
+            @logger.error "timerSyncError, raise #{boom.class} - #{boom.message}"
           end
         end
       }
